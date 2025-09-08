@@ -51,22 +51,57 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Exe)
             packageName = "CloudStream"
             packageVersion = "4.5.5"
-            description = "CloudStream Desktop - Movie and TV Show Streaming"
-            copyright = "© 2024 CloudStream. Licensed under GPL v3."
+            description = "CloudStream Desktop - Stream movies and TV shows"
+            copyright = "© 2024 CloudStream Team. Licensed under GPL v3."
             vendor = "CloudStream Team"
+            licenseFile.set(project.file("../LICENSE"))
             
             windows {
                 console = false
                 dirChooser = true
                 perUserInstall = true
+                upgradeUuid = "18159995-d967-4cd2-8885-77f3374e1234" // Fixed UUID for upgrades
                 
-                // Code signing configuration - will be configured later
+                // App metadata
+                packageName = "CloudStream Desktop"
+                packageVersion = "4.5.5"
+                
+                // Exe specific settings
+                shortcut = true
+                menu = true
+                
+                // Code signing configuration
+                // Uncomment and configure when you have a certificate
                 // signing {
                 //     sign.set(true)
-                //     identity.set("CloudStream Team")
+                //     identity.set(System.getenv("SIGNING_IDENTITY") ?: "CloudStream Team")
+                //     keystore.set(file(System.getenv("KEYSTORE_PATH") ?: "certificate.p12"))
+                //     password.set(System.getenv("KEYSTORE_PASSWORD") ?: "")
+                //     timestamp.set("http://timestamp.sectigo.com")
                 // }
             }
+            
+            linux {
+                packageName = "cloudstream-desktop"
+                debMaintainer = "cloudstream@example.com"
+                menuGroup = "AudioVideo"
+                appCategory = "AudioVideo"
+            }
+            
+            macOS {
+                bundleID = "com.lagradost.cloudstream3.desktop"
+                packageName = "CloudStream Desktop"
+                dockName = "CloudStream"
+                appCategory = "public.app-category.entertainment"
+            }
         }
+        
+        // JVM arguments for better performance
+        jvmArgs += listOf(
+            "-Xmx2G",
+            "-Djava.awt.headless=false",
+            "-Dfile.encoding=UTF-8"
+        )
     }
 }
 
@@ -78,5 +113,21 @@ tasks.withType<KotlinCompile> {
             "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
             "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api"
         )
+    }
+}
+
+// Task to create a simple JAR for distribution
+tasks.register<Jar>("fatJar") {
+    group = "distribution"
+    description = "Create a fat JAR with all dependencies"
+    archiveClassifier.set("all")
+    from(sourceSets.main.get().output)
+    dependsOn(configurations.runtimeClasspath)
+    from({
+        configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
+    })
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes["Main-Class"] = "com.lagradost.cloudstream3.desktop.MainKt"
     }
 }

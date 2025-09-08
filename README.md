@@ -4,9 +4,22 @@
 
 [![Discord](https://invidget.switchblade.xyz/5Hus6fM)](https://discord.gg/5Hus6fM)
 
+## 🖥️ **NEW: Desktop Version Available!**
+
+CloudStream is now available as a **native desktop application** for Windows, Linux, and macOS!
+
+### Download Desktop Version:
+- **Windows**: Download `.exe` or `.msi` installer
+- **Linux**: Download `.deb` package or AppImage  
+- **macOS**: Download `.dmg` disk image
+
+[📥 Download Desktop Version](../../releases) | [📖 Desktop Migration Guide](DESKTOP_MIGRATION.md)
+
+---
 
 ## Table of Contents: 
 + [About Us:](#about_us)
++ [Desktop Version:](#desktop_version)
 + [Installation Steps:](#install_rules)
 + [Contributing:](#contributing)
 + [Issues:](#issues)
@@ -23,7 +36,7 @@
 
 **CloudStream is a media center that prioritizes and emphasizes complete freedom and flexibility for users and developers.** 
 
-CloudStream is an extension-based multimedia player with tracking support. There are extensions to view videos from: 
+CloudStream is an extension-based multimedia player with tracking support, now available on both **Android** and **Desktop** platforms. There are extensions to view videos from: 
 
 + [Librevox (audio-books)](https://librivox.org/) 
 + [Youtube](https://www.youtube.com/)

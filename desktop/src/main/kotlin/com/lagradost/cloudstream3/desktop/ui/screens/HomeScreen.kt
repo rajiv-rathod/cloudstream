@@ -6,75 +6,88 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.lagradost.cloudstream3.desktop.ui.components.MovieCard
+import com.lagradost.cloudstream3.desktop.viewmodels.MainViewModel
+import kotlinx.coroutines.flow.collectAsState
 
 @Composable
 fun HomeScreen(
+    viewModel: MainViewModel,
     onVideoClick: (String) -> Unit
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            Text(
-                text = "Recently Added",
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(10) { index ->
-                    MovieCard(
-                        title = "Movie ${index + 1}",
-                        imageUrl = "",
-                        onClick = { onVideoClick("https://example.com/movie${index + 1}") }
+    val homeState by viewModel.homeState.collectAsState()
+    
+    Box(modifier = Modifier.fillMaxSize()) {
+        when {
+            homeState.isLoading -> {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+            homeState.error != null -> {
+                Column(
+                    modifier = Modifier.align(Alignment.Center),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Error: ${homeState.error}",
+                        style = MaterialTheme.typography.bodyLarge
                     )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = { viewModel.loadHomePage() }) {
+                        Text("Retry")
+                    }
                 }
             }
-        }
-        
-        item {
-            Text(
-                text = "Trending Movies",
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(bottom = 8.dp, top = 16.dp)
-            )
-            
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(10) { index ->
-                    MovieCard(
-                        title = "Trending ${index + 1}",
-                        imageUrl = "",
-                        onClick = { onVideoClick("https://example.com/trending${index + 1}") }
-                    )
+            homeState.homePages.isNotEmpty() -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(homeState.homePages) { homePageList ->
+                        Column {
+                            Text(
+                                text = homePageList.name,
+                                style = MaterialTheme.typography.headlineSmall,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                            
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(homePageList.list) { searchResponse ->
+                                    MovieCard(
+                                        title = searchResponse.name,
+                                        imageUrl = searchResponse.posterUrl ?: "",
+                                        onClick = { 
+                                            viewModel.loadContent(searchResponse.url) { loadResponse ->
+                                                if (loadResponse != null) {
+                                                    // For now, just pass the data URL
+                                                    val dataUrl = when (loadResponse) {
+                                                        is MovieLoadResponse -> loadResponse.dataUrl
+                                                        is TvSeriesLoadResponse -> loadResponse.episodes.firstOrNull()?.data
+                                                        else -> null
+                                                    }
+                                                    dataUrl?.let { onVideoClick(it) }
+                                                }
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
-        }
-        
-        item {
-            Text(
-                text = "TV Shows",
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(bottom = 8.dp, top = 16.dp)
-            )
-            
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(10) { index ->
-                    MovieCard(
-                        title = "TV Show ${index + 1}",
-                        imageUrl = "",
-                        onClick = { onVideoClick("https://example.com/tvshow${index + 1}") }
-                    )
-                }
+            else -> {
+                Text(
+                    text = "No content available",
+                    modifier = Modifier.align(Alignment.Center),
+                    style = MaterialTheme.typography.bodyLarge
+                )
             }
         }
     }

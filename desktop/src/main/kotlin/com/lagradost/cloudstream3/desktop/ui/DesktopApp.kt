@@ -14,6 +14,7 @@ import com.lagradost.cloudstream3.desktop.ui.components.NavigationBar
 import com.lagradost.cloudstream3.desktop.ui.components.SearchBar
 import com.lagradost.cloudstream3.desktop.ui.components.VideoPlayerDialog
 import com.lagradost.cloudstream3.desktop.ui.screens.*
+import com.lagradost.cloudstream3.desktop.viewmodels.MainViewModel
 
 enum class Screen {
     HOME, SEARCH, LIBRARY, SETTINGS
@@ -22,10 +23,18 @@ enum class Screen {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DesktopApp() {
+    val viewModel = remember { MainViewModel() }
+    
     var currentScreen by remember { mutableStateOf(Screen.HOME) }
     var searchQuery by remember { mutableStateOf("") }
     var showVideoPlayer by remember { mutableStateOf(false) }
-    var currentVideoUrl by remember { mutableStateOf("") }
+    var currentVideoData by remember { mutableStateOf("") }
+    
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.dispose()
+        }
+    }
     
     Box(modifier = Modifier.fillMaxSize()) {
         Row(modifier = Modifier.fillMaxSize()) {
@@ -72,21 +81,33 @@ fun DesktopApp() {
                 ) {
                     when (currentScreen) {
                         Screen.HOME -> HomeScreen(
-                            onVideoClick = { url ->
-                                currentVideoUrl = url
-                                showVideoPlayer = true
+                            viewModel = viewModel,
+                            onVideoClick = { data ->
+                                // Load video links and play
+                                viewModel.loadVideoLinks(data) { links ->
+                                    if (links.isNotEmpty()) {
+                                        currentVideoData = links.first().url
+                                        showVideoPlayer = true
+                                    }
+                                }
                             }
                         )
                         Screen.SEARCH -> SearchScreen(
                             query = searchQuery,
-                            onVideoClick = { url ->
-                                currentVideoUrl = url
-                                showVideoPlayer = true
+                            viewModel = viewModel,
+                            onVideoClick = { data ->
+                                // Load video links and play
+                                viewModel.loadVideoLinks(data) { links ->
+                                    if (links.isNotEmpty()) {
+                                        currentVideoData = links.first().url
+                                        showVideoPlayer = true
+                                    }
+                                }
                             }
                         )
                         Screen.LIBRARY -> LibraryScreen(
-                            onVideoClick = { url ->
-                                currentVideoUrl = url
+                            onVideoClick = { data ->
+                                currentVideoData = data
                                 showVideoPlayer = true
                             }
                         )
@@ -99,10 +120,10 @@ fun DesktopApp() {
         // Video Player Dialog
         if (showVideoPlayer) {
             VideoPlayerDialog(
-                videoUrl = currentVideoUrl,
+                videoUrl = currentVideoData,
                 onDismiss = { 
                     showVideoPlayer = false
-                    currentVideoUrl = ""
+                    currentVideoData = ""
                 }
             )
         }
